@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --c-ground: 247 244 255; --c-surface: 255 255 255; --c-ink: 30 18 51; --c-muted: 107 95 126;
+  --c-line: 227 219 242; --c-primary: 98 44 160; --c-onprimary: 255 255 255; --c-plum: 46 16 84;
+  --c-saffron: 255 176 32; --c-teal: 14 159 142; --c-brick: 224 69 46;
+}
+.dark {
+  --c-ground: 18 11 31; --c-surface: 29 19 48; --c-ink: 244 240 252; --c-muted: 186 174 206;
+  --c-line: 58 44 86; --c-primary: 255 176 32; --c-onprimary: 30 18 51; --c-plum: 59 26 102;
+  --c-saffron: 255 190 64; --c-teal: 61 214 195; --c-brick: 255 122 92;
+}
+[data-contrast="high"] { --c-ink: 0 0 0; --c-muted: 40 30 44; --c-line: 80 66 86; --c-ground: 255 255 255; --c-surface: 255 255 255; }
+.dark[data-contrast="high"] { --c-ink: 255 255 255; --c-muted: 235 228 238; --c-line: 190 176 196; --c-ground: 0 0 0; --c-surface: 12 8 14; }
+
+[data-size="large"] { font-size: 112.5%; }
+[data-font="easy"] body { font-family: "Atkinson Hyperlegible", system-ui, sans-serif; letter-spacing: .02em; word-spacing: .08em; line-height: 1.75; }
+[data-motion="reduce"] *, [data-motion="reduce"] *::before, [data-motion="reduce"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+
+@layer base {
+  body { @apply bg-ground font-sans text-ink antialiased; }
+  :focus-visible { outline: 3px solid rgb(var(--c-saffron)); outline-offset: 2px; }
+}
+@layer components {
+  .field { @apply w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30; }
+  .th { @apply px-4 py-2.5 text-left text-xs font-semibold text-muted; }
+  .td { @apply px-4 py-3 text-sm; }
+}
+
+/* one orchestrated moment: the shelf slides in on member home */
+@keyframes shelf-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.shelf-in { animation: shelf-in .5s cubic-bezier(.2,.7,.2,1) both; }
+/* answers a user action: the desk stamps a confirmed check-out */
+@keyframes stamp { 0% { transform: scale(1.12) rotate(-1.5deg); opacity: 0; } 60% { transform: scale(.98); opacity: 1; } 100% { transform: none; } }
+.stamp { animation: stamp .35s ease-out both; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.skeleton { position: relative; overflow: hidden; background: rgb(var(--c-line)); border-radius: 6px; }
+.skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .35), transparent); animation: shimmer 1.4s infinite; }
+@media (prefers-reduced-motion: reduce) { .shelf-in, .stamp, .skeleton::after { animation: none; } }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* background imagery can be switched off, and is always off in high-contrast mode */
+[data-bg="off"] .backdrop-img, [data-contrast="high"] .backdrop-img { display: none; }
+
+/* thin brand gradient across the top of every public page */
+.brand-bar { height: 3px; background: linear-gradient(90deg, rgb(var(--c-primary)), rgb(var(--c-teal)), rgb(var(--c-saffron))); }
