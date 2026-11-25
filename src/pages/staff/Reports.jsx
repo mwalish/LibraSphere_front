@@ -9,7 +9,7 @@ const COLUMNS = {
             ["Due", (r) => fmtDate(r.due_at)], ["", (r) => <Badge tone="bad">{r.days_overdue}d late</Badge>]],
   "most-borrowed": [["Title", (r) => r.title], ["Loans (90 days)", (r) => r.loans]],
   "new-arrivals": [["Title", (r) => r.title], ["Copies added (30 days)", (r) => r.copies]],
-  "membership-growth": [["Month", (r) => fmtDate(r.month)], ["New members", (r) => r.new_members]],
+  "membership-growth": [["Month", (r) => new Date(`${r.month}T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })], ["New members", (r) => r.new_members]],
 };
 
 export default function Reports() {

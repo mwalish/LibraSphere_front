@@ -5,7 +5,8 @@ export const money = (v) => Number(v ?? 0).toLocaleString(undefined, { minimumFr
 
 /** "Due today", "Due in 3 days", "2 days overdue" */
 export function dueLabel(iso) {
-  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOfDay(new Date(iso)) - startOfDay(new Date())) / 86_400_000);
   if (days < 0) return `${-days} day${days === -1 ? "" : "s"} overdue`;
   if (days === 0) return "Due today";
   return `Due in ${days} day${days === 1 ? "" : "s"}`;

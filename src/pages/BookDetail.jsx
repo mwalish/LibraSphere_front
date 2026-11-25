@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { errorMessage, holds, items, meta, works } from "../api/client";
+import { errorMessage, holds, items, me, meta, works } from "../api/client";
 import { BookCover } from "../components/WorkCard";
 import { Badge, Button, Card, Icon, Skeleton } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
@@ -45,6 +45,12 @@ export default function BookDetail() {
   const { data: work, loading, error } = useApi(() => works.get(id), [id]);
   const { data: avail } = useApi(() => works.availability(id), [id]);
   const [busy, setBusy] = useState(null);
+  // what this member already has with this title: a live hold, or a loan
+  const { data: myHolds } = useApi(() => (user?.member ? me.holds() : Promise.resolve([])), [user?.id]);
+  const { data: myLoans } = useApi(() => (user?.member ? me.loans() : Promise.resolve([])), [user?.id]);
+  const myHold = myHolds?.find((h) => h.work === Number(id));
+  const onLoan = !!myLoans?.some((l) => l.work === Number(id));
+  const blocked = !!user?.member && user.member.status !== "active";
 
   const hold = async (branch) => {
     if (!user) return navigate("/login", { state: { from: `/book/${id}` } });
@@ -53,6 +59,10 @@ export default function BookDetail() {
       const h = await holds.create({ work: Number(id), pickup_branch: branch.branch });
       toast.success(h.status === "ready" ? `A copy is waiting for you at ${branch.branch_name}` : `You're #${h.position} in the queue at ${branch.branch_name}`);
     } catch (e) { toast.error(errorMessage(e)); } finally { setBusy(null); }
+  };
+
+  const cancelHold = async () => {
+    try { await holds.cancel(myHold.id); toast.success("Hold cancelled"); } catch (e) { toast.error(errorMessage(e)); }
   };
 
   if (error) return <p className="text-brick">We couldn't find that title. <Link className="underline" to="/search">Back to the catalog</Link></p>;
@@ -68,6 +78,8 @@ export default function BookDetail() {
         <div className="mt-3 flex flex-wrap gap-2">{work.subjects.map((s) => <Badge key={s.id}>{s.name}</Badge>)}</div>
         {work.description && <p className="mt-5 max-w-prose leading-relaxed">{work.description}</p>}
 
+        {blocked && <p className="mt-6 rounded-md border border-saffron bg-saffron/15 p-3 text-sm">Your membership is <strong>{user.member.status}</strong>, so you can't reserve right now. Ask a librarian at your branch.</p>}
+        {onLoan && <p className="mt-6 rounded-md border border-teal bg-teal/10 p-3 text-sm">You already have this title on loan.</p>}
         <h2 className="mb-3 mt-8 font-display text-2xl">Availability</h2>
         <Card className="divide-y divide-line">
           {!avail ? <div className="p-4"><Skeleton className="h-6" /></div> : avail.length === 0 ? (
@@ -79,8 +91,14 @@ export default function BookDetail() {
                 <p className="text-sm text-muted">{b.available} of {b.total} on the shelf</p>
               </div>
               {b.available > 0 ? <Badge tone="good">Available</Badge> : <Badge tone="warn">All out</Badge>}
-              {(!user || user.member) && (
-                <Button variant={b.available > 0 ? "primary" : "accent"} disabled={busy === b.branch} onClick={() => hold(b)}>
+              {myHold && myHold.pickup_branch === b.branch ? (
+                <>
+                  <Badge tone={myHold.status === "ready" ? "good" : "warn"}>{myHold.status === "ready" ? "Ready for pickup" : `#${myHold.position} in queue`}</Badge>
+                  <Button variant="ghost" onClick={cancelHold}>Cancel hold</Button>
+                </>
+              ) : (!user || user.member) && (
+                <Button variant={b.available > 0 ? "primary" : "accent"} disabled={busy === b.branch || !!myHold || onLoan || blocked}
+                  title={myHold ? "You already have a hold on this title" : undefined} onClick={() => hold(b)}>
                   <Icon name={b.available > 0 ? "bookmark-plus" : "hourglass-split"} /> {b.available > 0 ? "Reserve a copy" : "Join waitlist"}
                 </Button>)}
             </div>))}
